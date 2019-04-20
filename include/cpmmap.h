@@ -188,6 +188,7 @@ namespace cpmmap
 		void sync()
 		{
 			flush_file();
+			update_timestamp();
 		}
 
 		static mapped_file create(const std::string & filename, size_t size, bool shared = false)
@@ -265,6 +266,12 @@ namespace cpmmap
 			}
 		}
 
+		void update_timestamp()
+		{
+			timespec t[2]{ {{}, UTIME_NOW }, { {}, UTIME_NOW } };
+			futimens(file_handle, t);
+		}
+
 		void unmap_file()
 		{
 			if (filesize && pointer)
@@ -302,7 +309,7 @@ namespace cpmmap
 			std::wstring wfilename;
 			// the length is going to be at least filename.size()
 			wfilename.resize(filename.size());
-			int num = MultiByteToWideChar(CP_UTF8, 0, &filename[0], filename.size(), &wfilename[0], wfilename.size());
+			int num = MultiByteToWideChar(CP_UTF8, 0, &filename[0], static_cast<int>(filename.size()), &wfilename[0], wfilename.size());
 			if (num == 0) throw runtime_error("Could not convert filename to UTF-16");
 
 			// open the file
@@ -391,6 +398,15 @@ namespace cpmmap
 			if (!r) throw runtime_error("could not flush file");
 			r = FlushFileBuffers(file_handle);
 			if (!r) throw runtime_error("could not flush file");
+		}
+
+		void update_timestamp()
+		{
+			SYSTEMTIME st{};
+			FILETIME ft{};
+			GetSystemTime(&st);
+			SystemTimeToFileTime(&st, &ft);
+			SetFileTime(file_handle, nullptr, nullptr, &ft);
 		}
 
 		void unmap_file()
