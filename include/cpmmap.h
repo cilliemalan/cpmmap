@@ -266,6 +266,15 @@ namespace cpmmap
 			}
 		}
 
+		void flush_file()
+		{
+			auto r = msync(pointer, filesize, MS_SYNC | MS_INVALIDATE);
+			if (r)
+			{
+				throw runtime_error("could not sync the memory mapping.");
+			}
+		}
+
 		void update_timestamp()
 		{
 			timespec t[2]{ {{}, UTIME_NOW }, { {}, UTIME_NOW } };
@@ -289,10 +298,6 @@ namespace cpmmap
 				file_handle = 0;
 			}
 			filesize = 0;
-		}
-
-		void flush_file()
-		{
 		}
 #endif
 

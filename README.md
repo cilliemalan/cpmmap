@@ -1,6 +1,6 @@
 # Cross Platform Memory Mapped Files
 A cross platform C++ header-only library for mapping files into memory.
-Memory mapping a file means the entire file is acessible via a pointer
+Memory mapping a file means the entire file is acessible via a pointer.
 ```cpp
     // simply include the header
     #include <cpmmap.h>
