@@ -45,7 +45,8 @@ Memory mapping a file means the entire file is acessible via a pointer
 - "Cross platform" means Windows and Linux. I don't have a Mac.
 - Throws exceptions when stuff goes wrong.
 - Don't use `new` and `delete`. The file is unmapped when it goes out of scope.
-- `mapped_file` cannot be copied but it can be moved.
+- `mapped_file` cannot be copied but it can be moved (I mean C++ object
+  move and copy, not file).
 - It has a `shared` option in the constructor, allowing other processes and operations
   to read the file using normal I/O or map the file. Writing a file using normal I/O
   doesn't seem to be possible if the file is mapped in any way.
