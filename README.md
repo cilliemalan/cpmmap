@@ -1,6 +1,6 @@
 # Cross Platform Memory Mapped Files
 A cross platform C++ header-only library for mapping files into memory.
-```
+```cpp
     // simply include the header
     #include <cpmmap.h>
     // everithing is in the cpmmap namespace
@@ -34,7 +34,7 @@ A cross platform C++ header-only library for mapping files into memory.
     // allowing other processes to read the file.
     mapped_file m("thefile.bin", true, true);
 
-```cpp
+```
 
 ##Notes
 - "Cross platform" means Windows and Linux. I don't have a Mac.
@@ -55,4 +55,4 @@ A cross platform C++ header-only library for mapping files into memory.
 
 
 #LICENSE
-See [License]
+See [License](License)
