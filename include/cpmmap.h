@@ -49,17 +49,36 @@ namespace cpmmap
 	class runtime_error : public std::runtime_error
 	{
 	public:
-		runtime_error(const std::string& message)
-			:std::runtime_error(concat_message(message))
+#if defined(CPMMAP_WINDOWS)
+		runtime_error(const std::string& message, DWORD code)
+			:std::runtime_error(concat_message(message, code))
 		{
 		}
 
+		runtime_error(const std::string& message)
+			:std::runtime_error(concat_message(message, GetLastError()))
+		{
+		}
+#endif
+
+#if defined (CPMMAP_UNIX)
+		runtime_error(const std::string& message, int code)
+			:std::runtime_error(concat_message(message, code))
+		{
+		}
+
+		runtime_error(const std::string& message)
+			:std::runtime_error(concat_message(message, errno))
+		{
+		}
+#endif
+
 	private:
-		std::string concat_message(const std::string& message)
+		std::string concat_message(const std::string& message, long long code)
 		{
 			std::string msg{ message };
 #if defined(CPMMAP_WINDOWS)
-			auto e = GetLastError();
+			DWORD e = static_cast<DWORD>(code);
 			if (e != 0)
 			{
 				char* syserr = nullptr;
@@ -75,6 +94,19 @@ namespace cpmmap
 					msg += ": ";
 					msg += syserr;
 					LocalFree(syserr);
+				}
+			}
+#endif
+
+#if defined(CPMMAP_UNIX)
+			int e = static_cast<int>(code);
+			if (e != 0)
+			{
+				const char* syserr = strerror(e);
+				if (syserr)
+				{
+					msg += ": ";
+					msg += syserr;
 				}
 			}
 #endif
@@ -141,6 +173,8 @@ namespace cpmmap
 		inline char& operator[](size_t pos) { if (pos > filesize) throw std::out_of_range("out of range"); return *(pointer + pos); }
 		inline const char& operator[](size_t pos) const { if (pos > filesize) throw std::out_of_range("out of range"); return *(pointer + pos); }
 		inline std::uint64_t size() const { return filesize; }
+		inline char* get() { return pointer; }
+		inline const char* get() const { return pointer; }
 
 		// methods
 		void resize(size_t newsize)
@@ -174,6 +208,7 @@ namespace cpmmap
 		{
 		}
 
+
 #if defined(CPMMAP_UNIX)
 		int file_handle;
 
@@ -185,41 +220,40 @@ namespace cpmmap
 			{
 				throw runtime_error("could not open file");
 			}
+			rw = readwrite;
 		}
 
-		void map_file(bool readwrite, std::uint64_t size)
+		void get_filesize()
 		{
-			if (size != 0)
-			{
-				if (readwrite)
-				{
-					if (ftruncate(file_handle, size))
-					{
-						close(file_handle);
-						throw runtime_error("could not truncate file");
-					}
-				}
-				else
-				{
-					throw std::invalid_argument("When opening file in read-only mode, filesize must be set to 0 (auto).");
-				}
-			}
-
 			// get file size
 			struct stat filestats;
 			auto statresult = fstat(file_handle, &filestats);
-			if (statresult != 0)
+			if (statresult == -1)
 			{
 				close(file_handle);
 				throw runtime_error("could not stat file");
 			}
 			filesize = filestats.st_size;
+		}
+		
+		void resize_file(std::uint64_t size)
+		{
+			if (ftruncate(file_handle, size) == -1)
+			{
+				close(file_handle);
+				throw runtime_error("could not truncate file");
+			}
 
+			filesize = size;
+		}
+
+		void map_file()
+		{
 			// memory map
 			pointer = static_cast<char*>(mmap(
 				0,
 				filesize,
-				readwrite ? PROT_WRITE : PROT_READ,
+				rw ? PROT_WRITE : PROT_READ,
 				MAP_SHARED,
 				file_handle,
 				0));
@@ -227,7 +261,7 @@ namespace cpmmap
 			if (!pointer || pointer == MAP_FAILED)
 			{
 				close(file_handle);
-				throw runtime_error("could not open file");
+				throw runtime_error("could not map file");
 			}
 		}
 
@@ -248,6 +282,10 @@ namespace cpmmap
 				file_handle = 0;
 			}
 			filesize = 0;
+		}
+
+		void flush_file()
+		{
 		}
 #endif
 
@@ -347,7 +385,6 @@ namespace cpmmap
 			}
 		}
 
-
 		void flush_file()
 		{
 			auto r = FlushViewOfFile(pointer, 0);
@@ -379,6 +416,6 @@ namespace cpmmap
 			}
 			filesize = 0;
 		}
-	};
 #endif
+	};
 }

@@ -1,18 +1,30 @@
 #include "pch.h"
 #include "cpmmap.h"
 
+
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <stdio.h>
+
+
 using namespace cpmmap;
 
+
 TEST(Basic, Open) {
+	// create a file
 	const char text[]{ "my text here 1!" };
 	std::ofstream outfile("test.txt", std::ios_base::out | std::ios_base::trunc);
 	outfile.write(text, sizeof(text));
 	outfile.close();
 
+	// map the file
 	mapped_file m("test.txt");
 
+	// the memory is now available
 	EXPECT_EQ(m.size(), sizeof(text));
-	EXPECT_STREQ(&m[0], text);
+	EXPECT_STREQ(m.get(), text);
 }
 
 TEST(Basic, Create) {
@@ -33,13 +45,14 @@ TEST(Basic, CreateAndWrite) {
 
 	auto m{ mapped_file::create("test.txt", sizeof(text), true) };
 
-	memcpy(&m[0], text, sizeof(text));
+	auto p = m.get();
+	memcpy(p, text, sizeof(text));
 	m.sync();
 
 	std::ifstream file("test.txt");
 	file.read(buff, sizeof(buff));
 
-	EXPECT_STREQ(&m[0], text);
+	EXPECT_STREQ(m.get(), text);
 }
 
 TEST(Basic, MultiMap) {
@@ -51,14 +64,14 @@ TEST(Basic, MultiMap) {
 	mapped_file m1{ "test.txt", true, true };
 	mapped_file m2{ "test.txt", true, true };
 
-	memcpy(&m1[0], text, sizeof(text));
+	memcpy(m1.get(), text, sizeof(text));
 
 	EXPECT_EQ(m2.size(), m1.size());
-	EXPECT_NE(&m1[0], &m2[0]);
-	EXPECT_STREQ(text, &m1[0]);
-	EXPECT_STREQ(text, &m2[0]);
+	EXPECT_NE(m1.get(), m2.get());
+	EXPECT_STREQ(text, m1.get());
+	EXPECT_STREQ(text, m2.get());
 	m1[0] = 'M';
-	EXPECT_STREQ(&m1[0], &m2[0]);
+	EXPECT_STREQ(m1.get(), m2.get());
 }
 
 TEST(Basic, ResizeUp) {
