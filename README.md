@@ -34,7 +34,7 @@ A cross platform C++ header-only library for mapping files into memory.
     // allowing other processes to read the file.
     mapped_file m("thefile.bin", true, true);
 
-```C++
+```cpp
 
 ##Notes
 - "Cross platform" means Windows and Linux. I don't have a Mac.
