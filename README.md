@@ -18,11 +18,11 @@ A cross platform C++ header-only library for mapping files into memory.
 
 
     // map an existing file read/write
-    size_t size = 1024;
-    mapped_file m("thefile.bin", true, size);
+    mapped_file m("thefile.bin", true);
 
 
     // create a new file
+    size_t size = 1024;
     auto m = mapped_file::create("newfile.bin", size);
 
 
@@ -33,10 +33,9 @@ A cross platform C++ header-only library for mapping files into memory.
     // map a file in rw and shared mode,
     // allowing other processes to read the file.
     mapped_file m("thefile.bin", true, true);
-
 ```
 
-##Notes
+## Notes
 - "Cross platform" means Windows and Linux. I don't have a Mac.
 - Throws exceptions when stuff goes wrong.
 - Don't use `new` and `delete`. The file is unmapped when it goes out of scope.
@@ -47,12 +46,13 @@ A cross platform C++ header-only library for mapping files into memory.
 - If the same file is mapped multiple times, it will be mapped in seperate locations.
   If the memory is changed in one it will reflect in the other.
 
-##Limitations
+## Limitations
 - Has no thread safety. If you're doing stuff that would need thread safety, think
   about what you're doing a bit more and then implement your own synchronization.
 - Pointers into the mapped block will be invalidated when the block is resized.
-- Doesn't implement iterators. If you need them for some reason use `&[0]` and `&[size()]`.
+- Doesn't implement iterators. If you need them for some reason
+  use `m.get()` and `m.get() + m.size()`.
 
 
-#LICENSE
-See [License](License)
+# LICENSE
+See [License](License).
